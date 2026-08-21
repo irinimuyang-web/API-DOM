@@ -1,30 +1,30 @@
-// ==========================================
-// GET HTML ELEMENTS
-// ==========================================
+// Store the fetched countries in memory
+let countries = [];
 
+// Get elements from the HTML
 const loadButton = document.getElementById("loadCountries");
-const countriesContainer =
-    document.getElementById("countriesContainer");
-const statusMessage =
-    document.getElementById("status");
+const countriesContainer = document.getElementById("countriesContainer");
+const statusMessage = document.getElementById("status");
+const searchInput = document.getElementById("searchInput");
 
-
-// ==========================================
-// PUBLIC API URL
-// ==========================================
-
-// Free API - no API key required
+// API URL
 const apiURL =
     "https://countries.dev/countries?fields=name,capital,population,flag";
 
 
-// ==========================================
-// FETCH USING .THEN()
-// ==========================================
+// ===============================
+// FETCH COUNTRIES
+// ===============================
 
 function fetchCountries() {
 
     console.log("Starting fetch()...");
+
+    // Disable the button while loading
+    loadButton.disabled = true;
+    loadButton.textContent = "Loading...";
+
+    statusMessage.textContent = "Loading country information...";
 
     fetch(apiURL)
 
@@ -32,6 +32,7 @@ function fetchCountries() {
 
             console.log("Response received:", response);
 
+            // Check if the request was successful
             if (!response.ok) {
                 throw new Error(
                     "Network response was not successful"
@@ -47,12 +48,15 @@ function fetchCountries() {
             console.log("Parsed JSON data:");
             console.log(data);
 
-            // Display the countries
-            displayCountries(data);
+            // Store the fetched data in memory
+            countries = data;
 
+            // Display all countries
+            displayCountries(countries);
+
+            // Update status message
             statusMessage.textContent =
                 "Country information loaded successfully!";
-
         })
 
         .catch(function(error) {
@@ -61,142 +65,103 @@ function fetchCountries() {
 
             statusMessage.textContent =
                 "Sorry, there was an error loading the data.";
-
         })
 
         .finally(function() {
 
+            // Enable the button again
             loadButton.disabled = false;
 
-            loadButton.textContent =
-                "Load Countries";
-
+            loadButton.textContent = "Load Countries";
         });
 }
 
 
-// ==========================================
-// ASYNC/AWAIT VERSION
-// ==========================================
-
-async function fetchCountriesAsync() {
-
-    console.log("Starting async/await fetch()...");
-
-    try {
-
-        const response = await fetch(apiURL);
-
-        console.log(
-            "Async/Await response received:",
-            response
-        );
-
-        if (!response.ok) {
-            throw new Error(
-                "Network response was not successful"
-            );
-        }
-
-        const data = await response.json();
-
-        console.log(
-            "Async/Await parsed JSON:"
-        );
-
-        console.log(data);
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Async/Await Error:",
-            error
-        );
-
-    }
-}
-
-
-// ==========================================
+// ===============================
 // DISPLAY COUNTRIES
-// ==========================================
+// ===============================
 
-function displayCountries(countries) {
+function displayCountries(data) {
 
+    // Clear the old cards
     countriesContainer.innerHTML = "";
 
-    // Sort countries alphabetically
-    countries.sort(function(a, b) {
+    // Check if there are no matching countries
+    if (data.length === 0) {
 
-        return a.name.localeCompare(b.name);
+        countriesContainer.innerHTML =
+            "<p>No countries found.</p>";
 
-    });
+        return;
+    }
 
+    // Create a card for each country
+    data.forEach(function(country) {
 
-    // Show the first 12 countries
-    const selectedCountries =
-        countries.slice(0, 12);
-
-
-    selectedCountries.forEach(function(country) {
-
-        const card =
-            document.createElement("div");
+        const card = document.createElement("div");
 
         card.classList.add("country-card");
 
-
-        const countryName =
-            country.name || "Unknown";
-
-
-        const capital =
-            country.capital || "No capital information";
-
-
-        const population =
-            country.population
-                ? Number(country.population).toLocaleString()
-                : "Unknown";
-
-
-        const flag =
-            country.flag || "";
-
-
         card.innerHTML = `
-
-            <img
-                src="${flag}"
-                alt="Flag of ${countryName}"
+            <img 
+                src="${country.flag}" 
+                alt="Flag of ${country.name}"
             >
 
-            <div class="country-info">
+            <h2>${country.name}</h2>
 
-                <h3>${countryName}</h3>
+            <p>
+                <strong>Capital:</strong>
+                ${country.capital || "N/A"}
+            </p>
 
-                <p>
-                    <strong>Capital:</strong>
-                    ${capital}
-                </p>
-
-                <p>
-                    <strong>👥 Population:</strong>
-                    ${population}
-                </p>
-
-            </div>
-
+            <p>
+                <strong>Population:</strong>
+                ${country.population
+                    ? country.population.toLocaleString()
+                    : "N/A"}
+            </p>
         `;
 
-
         countriesContainer.appendChild(card);
-
     });
 }
 
+
+// ===============================
+// LOAD BUTTON
+// ===============================
+
+loadButton.addEventListener("click", function() {
+
+    fetchCountries();
+
+});
+
+
+// ===============================
+// SEARCH / FILTER
+// ===============================
+
+searchInput.addEventListener("input", function() {
+
+    // Get what the user typed
+    const searchTerm =
+        searchInput.value.toLowerCase().trim();
+
+    // Filter the countries already stored in memory
+    const filteredCountries = countries.filter(function(country) {
+
+        return country.name
+            .toLowerCase()
+            .includes(searchTerm);
+
+    });
+
+    // Display the filtered results
+    displayCountries(filteredCountries);
+
+});
 
 // ==========================================
 // BUTTON EVENT
